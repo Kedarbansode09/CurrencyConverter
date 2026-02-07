@@ -1,4 +1,4 @@
-const BASE_URL = "https://raw.githubusercontent.com/WoXy-Sensei/currency-api/main/api/";
+const BASE_URL = "https://api.exchangerate.host/latest";
 
 const dropdowns = document.querySelectorAll(".dropdown select");
 const btn = document.querySelector("form button");
@@ -44,14 +44,24 @@ btn.addEventListener("click",async (evt) => {
         amount.value = "1";
     }
 
-    const URL = `${BASE_URL}${fromCurr.value}_${toCurr.value}.json`
+    const URL = `${BASE_URL}?base=${fromCurr.value}&symbols=${toCurr.value}`;
 
-    let responce = await fetch(URL);
-    let data = await responce.json();
-    
-    let rate = data.rate;
-    console.log(rate)
-    
-    let finalAmount = amtVal * rate;
-    msg.innerText = `${amtVal} ${fromCurr.value} =${finalAmount} ${toCurr.value}`
+    try {
+        const response = await fetch(URL);
+        if (!response.ok) {
+            throw new Error(`Request failed: ${response.status}`);
+        }
+        const data = await response.json();
+        const rate = data?.rates?.[toCurr.value];
+
+        if (!rate) {
+            throw new Error("Exchange rate unavailable.");
+        }
+
+        let finalAmount = amtVal * rate;
+        msg.innerText = `${amtVal} ${fromCurr.value} = ${finalAmount.toFixed(2)} ${toCurr.value}`;
+    } catch (error) {
+        msg.innerText = "Unable to fetch exchange rate. Please try again.";
+        console.error(error);
+    }
 });
